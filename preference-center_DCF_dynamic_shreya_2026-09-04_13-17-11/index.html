@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="english">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Consent Widget</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+
+  </head>
+  <body>
+    <div class="widget-container">
+      <div class="header-language-wrapper-container">
+        <div id="language-wrapper" class="d-none">
+          <div class="dropdown">
+            <label for="langSelect">
+              Language Preference <br />
+            </label>
+            <select id="langSelect"></select>
+          </div>
+        </div>
+      </div>
+      <div id="pc-tabs" class="pc-tabs d-none">
+        <div id="tab-current" class="pc-tab active">
+          Current Preference
+        </div>
+        <div id="tab-history" class="pc-tab">
+          Preference History
+        </div>
+      </div>
+
+      <div class="header-container">
+
+        <div id="logo-area" class="logo-area">
+        </div>
+      </div>
+
+      <div class="preview-statements">
+        <div id="consent-root">Loading...</div>
+
+        <div id="historyTab" class="hidden">
+          <div
+            id="historyContainer"
+            class="history-scroll"
+          ></div>
+        </div>
+
+        <div id="toast"></div>
+      </div>
+
+      <div class="full-width-footer-border" id="full-width-footer-border"></div>
+
+      <div
+        id="error-message"
+        class="error-message form-error"
+      ></div>
+
+      <div class="button-group" id="button-group">
+        <button class="cancel d-none" id="cancelBtn">
+          Cancel
+        </button>
+        <button class="submit d-none" id="submitBtn">
+          Submit
+        </button>
+      </div>
+    </div>
+
+<script>
+  window.consentWidgetConfig = {
+    preferenceFormId: "08f34363-b242-4b68-8d6f-1df81d6f6b81",
+    preferenceDetailsApiUrl:"https://perf.pre-dataprivacy.com/cpm-api/open-api/v1/preference/v1/export/getPreferenceDetails",
+    preferenceHistoryApiUrl:"https://perf.pre-dataprivacy.com/cpm-api/open-api/v1/preference/v1/export/auditSearch/scroll",
+    submitApiUrl:"https://perf.pre-dataprivacy.com/cpm-api/open-api/v1/preference/v1/createOrUpdateConsent",
+    signatureServiceUrl: "https://perf.pre-dataprivacy.com/cpm-sign",
+    userToken: "Bearer bearer",
+    customAttributes: {},
+    showButtons: true,
+    showLanguageDropdown: true,
+    enableCheckboxes: true,
+    enableRadioButtons: true,
+    enableDropdowns: true,
+    footerAlignment: "left",
+    receivedType:"WEB",
+    customHeaders: {
+        "test-header-1": "test-1",
+        "test-header-2": "test-2"
+    }
+  };
+
+  // Function for Android WebView integration to dynamically set user 
+  // Called from Android native code before loading the consent widget
+  window.updateConsentConfig = function(token) {
+  if (token) {
+    window.consentWidgetConfig.userToken = token;
+  }
+
+  // Dynamically load script.js only once to prevent multiple script injections
+    if (!window.scriptLoaded) {
+        const script = document.createElement('script');
+        script.src = 'script.js';
+        // SRI (Subresource Integrity) ensures script hasn't been tampered with
+        // crossOrigin required for SRI validation
+        script.crossOrigin = 'anonymous';
+        script.integrity = "sha384-oNm+LwGMLcT2c/RuclPBfrv1eVn0bxzSjQZU1h4imnP911oSYLeC4D8VRHLfMk/M";
+        script.onload = function() {
+          window.scriptLoaded = true;
+          console.log("script.js loaded");
+        };
+        document.body.appendChild(script);
+      }
+
+
+  return "Config updated successfully";
+};
+  
+</script>
+  
+<!--
+  Optional: Use custom buttons if the parent application
+  wants to control Consent Form submission and reset actions.
+
+  Note:
+  - Set `showButtons: false` in the widget configuration.
+  - Submit button calls `consentWidget.submit()`.
+  - Clear button calls `consentWidget.reset()`.
+-->
+
+<!--Example-->
+
+<!--
+<button id="parentClearBtn" style="padding:10px 16px; background:#dc2626; color:white; border:none; border-radius:6px;">
+  Clear Consent
+</button>
+<button id="parentSubmitBtn" style="padding:10px 16px; background:#16a34a; color:white; border:none; border-radius:6px;">
+  Submit Consent
+</button>
+
+<script>
+  document.getElementById("parentSubmitBtn").addEventListener("click", async () => {
+    if (!window.consentWidget) return;
+
+    const result = await window.consentWidget.submit();
+
+    console.log("Submit result:", result);
+
+    if (result.success) {
+      // navigate next page here
+      // window.location.href = "/next-page";
+    }
+  });
+
+  document.getElementById("parentClearBtn").addEventListener("click", () => {
+    if (!window.consentWidget) return;
+
+    window.consentWidget.reset();
+  });
+-->
+
+</script>
+<!--comment below line in case of Android integration -->
+<script src="script.js" integrity="sha384-oNm+LwGMLcT2c/RuclPBfrv1eVn0bxzSjQZU1h4imnP911oSYLeC4D8VRHLfMk/M" crossorigin="anonymous"></script>
+  </body>
+</html>
+   

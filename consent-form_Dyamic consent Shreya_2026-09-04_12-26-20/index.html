@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consent Widget</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="widget-container">
+   	<div class="header-language-wrapper-container ">
+		<div id="language-wrapper" style="display: none;">
+		    <div class="dropdown">
+			<label for="langSelect">Language Preference <br></label>
+			<select id="langSelect"></select>
+			</div>
+		</div>  
+	</div>
+    <div class="header-container">
+      <div class="logo-area" id="logo-area"></div>
+    </div>
+    	<div class ="preview-statements">
+        <div id="consent-root">Loading consent form...</div>
+        <div id="error-message" class="error-message"></div>
+        <div id="toast"></div>
+      </div> 
+      <div class="full-width-footer-border"></div>
+      <div class="button-group" id="button-group">
+          <button class="cancel" id="cancelBtn" style="display: none;">Cancel</button>
+          <button class="submit" id="submitBtn" style="display: none;">Submit</button>
+      </div>
+    
+  </div>
+  <script>
+    // Configuration options for the consent widget
+    window.consentWidgetConfig = {
+      consentFormId: "153378f0-95ae-4aa8-ba6d-0c80830b4a88",
+      apiUrl: "https://perf.pre-dataprivacy.com/cpm-api/open-api/v1/consent/v1/getConsentFormById",
+      submitApiUrl: "https://perf.pre-dataprivacy.com/cpm-api/open-api/v1/consent/v1/createOrUpdateConsent",
+      tenantToken: "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjMDE0NTczNi01MmIyLTRkMjEtOTQ2My0zZDI2NTQyMDQzZjciLCJwcm9kdWN0IjoiQ29uc2VudCBNYW5hZ21lbnQiLCJzY29wZSI6ImFjY2VzcyIsImlhdCI6MTc4ODUwNjA3OSwiZXhwIjoxNzg4NTkyNDc5fQ.uSsKnBAnjw-r1FyjuJsna6SR3d4pQjJQ3UtaeDXS7wE",
+      signatureServiceUrl: "https://perf.pre-dataprivacy.com/cpm-sign",
+      dataPrincipalId: [
+        {
+          key: "email",
+          value: "email"
+        }
+      ],
+      customAttributes: {},
+      showButtons: true,
+      showLanguageDropdown: true,
+      enableCheckboxes: true,
+      enableRadioButtons: true,
+      enableDropdowns: true,
+      receivedType:"WEB",
+      customHeaders: {
+        "test-header-1": "test-1",
+        "test-header-2": "test-2"
+      }
+    };
+
+  // Function for Android WebView integration to dynamically set tenant token and data principal ID
+  // Called from Android native code before loading the consent widget
+  window.updateConsentConfig = function(token, dataPrincipalId) {
+      if (token) {
+        window.consentWidgetConfig.tenantToken = token;
+      }
+
+      if (dataPrincipalId) {
+        window.consentWidgetConfig.dataPrincipalId = dataPrincipalId;
+      }
+
+      // Dynamically load script.js only once to prevent multiple script injections
+      if (!window.scriptLoaded) {
+        const script = document.createElement('script');
+        script.src = 'script.js';
+        // SRI (Subresource Integrity) ensures script hasn't been tampered with
+        // crossOrigin required for SRI validation
+        script.crossOrigin = 'anonymous';
+        script.integrity = "sha384-y5s8nwocYzQzIVByBuPGvznrJgIo6P/dLT3oxvQjJQ6dHSuXm9bMHoEq8vpicoF5";
+        script.onload = function() {
+          window.scriptLoaded = true;
+          console.log("script.js loaded");
+        };
+        document.body.appendChild(script);
+      }
+
+      return "Config updated successfully";
+    };
+  </script>
+  
+
+<!--
+  Optional: Use custom buttons if the parent application
+  wants to control Consent Form submission and reset actions.
+
+  Note:
+  - Set `showButtons: false` in the widget configuration.
+  - Submit button calls `consentWidget.submit()`.
+  - Clear button calls `consentWidget.reset()`.
+-->
+
+<!--Example-->
+
+<!--
+<button id="parentClearBtn" style="padding:10px 16px; background:#dc2626; color:white; border:none; border-radius:6px;">
+  Clear Consent
+</button>
+<button id="parentSubmitBtn" style="padding:10px 16px; background:#16a34a; color:white; border:none; border-radius:6px;">
+  Submit Consent
+</button>
+
+<script>
+  document.getElementById("parentSubmitBtn").addEventListener("click", async () => {
+    if (!window.consentWidget) return;
+
+    const result = await window.consentWidget.submit();
+
+    console.log("Submit result:", result);
+
+    if (result.success) {
+      // navigate next page here
+      // window.location.href = "/next-page";
+    }
+  });
+
+  document.getElementById("parentClearBtn").addEventListener("click", () => {
+    if (!window.consentWidget) return;
+
+    window.consentWidget.reset();
+  });
+</script>
+-->
+<!--comment below line in case of Android integration -->
+<script src="script.js" integrity="sha384-y5s8nwocYzQzIVByBuPGvznrJgIo6P/dLT3oxvQjJQ6dHSuXm9bMHoEq8vpicoF5" crossorigin="anonymous"></script>
+</body>
+</html>
