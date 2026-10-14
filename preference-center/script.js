@@ -2,6 +2,7 @@ const {
   preferenceFormId,
   preferenceDetailsApiUrl,
   preferenceHistoryApiUrl,
+  downloadHistoryPdfApiUrl,
   submitApiUrl,
   signatureServiceUrl,
   userToken,
@@ -13,8 +14,32 @@ const {
   footerAlignment = "left",
   customAttributes,
   receivedType,
-  customHeaders
+  customHeaders,
+  apiDomain
 } = window.consentWidgetConfig;
+
+// Re-points a branding asset URL at the ConfigMap-provided apiDomain. Handles both
+// root-relative paths ("/cpm-api/upload/v1/fileDownloads?...") and absolute URLs that
+// still carry a stale host, so the logo loads from the correct backend when the
+// downloaded widget is hosted elsewhere.
+function resolveAssetUrl(url) {
+  if (!url) return url;
+  const raw = String(url).trim();
+  const marker = "/cpm-api/upload/v1/fileDownloads";
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const parsed = new URL(raw);
+      if (parsed.pathname.indexOf(marker) === 0 && apiDomain) {
+        return apiDomain + parsed.pathname + parsed.search;
+      }
+    } catch (e) {}
+    return raw;
+  }
+  if (raw.indexOf("/cpm-api/") === 0 && apiDomain) {
+    return apiDomain + raw;
+  }
+  return raw;
+}
 
 let createConsentRequestList = [];
 let selectedLanguage = "english";
@@ -23,6 +48,7 @@ let pendingSignController = null;
 let currentSnapshot = null;
 let consentJwt = null;
 let clickEvent = async () => {};
+let currentActiveView = "CURRENT";
 
 const AES_KEY_B64 = "el+1+epeGlCquCYLsk3zyQTsq3KUKQKL9QcV0B9KIS8=";
 let globalSSS = null;
@@ -410,6 +436,8 @@ function setFormDisabled(disabled = true) {
 
   const submitBtn = document.getElementById("submitBtn");
   const cancelBtn = document.getElementById("cancelBtn");
+  submitBtn.disabled = disabled;
+  cancelBtn.disabled = disabled;
   
   if (disabled) {
     submitBtn.classList.add("loading");
@@ -806,17 +834,17 @@ async function sendConsent() {
       console.error("Storage failed:", e);
     }
     if (data.response && data.statusCode === 200) {
-      showToast("Consent saved successfully!", "success");
-	   setFormDisabled(false)
+     showToast("Consent saved successfully!", "success");
      await new Promise(resolve => setTimeout(resolve, 3000));
-	   fetchConsentData()
+     await fetchConsentData();
+     setFormDisabled(false);
      return data;
     } else {
       showToast(data.statusMessage || "Something went wrong.", "error");
-      setFormDisabled(false);
       await new Promise(resolve => setTimeout(resolve, 3000));
-      fetchConsentData()
-    }
+      await fetchConsentData();
+      setFormDisabled(false);
+      }
   } catch (err) {
     console.error(err);
     showToast("Failed to submit. Please check your network connection.", "error");
@@ -897,7 +925,7 @@ function renderConsent(data, selectedLang) {
 
   if (branding.logo) {
     const img = document.createElement("img");
-    img.src = branding.logo;
+    img.src = resolveAssetUrl(branding.logo);
     img.alt = branding.companyName || "Logo";
     img.className = "branding-logo";
     img.onerror = () => img.classList.add("hidden");
@@ -1502,10 +1530,15 @@ function switchToCurrent() {
   document.getElementById("logo-area").style.display =
     "block";
   toggleFooterButtons(true);
-
+  
     if (window.preferenceData?.currentPreference) {
     renderConsent(window.preferenceData, selectedLanguage);
   }
+
+  currentActiveView = "CURRENT";
+  const downloadBtn = document.getElementById("downloadHistoryBtn");
+  downloadBtn.classList.remove("hidden");
+  downloadBtn.innerHTML = '<i class="ri-download-2-line"></i> Download Current Preference';
 }
 
 function switchToHistory() {
@@ -1522,8 +1555,6 @@ function switchToHistory() {
   document
     .getElementById("tab-history")
     .classList.add("active");
-	
-  
 
   document.getElementById("logo-area").style.display =
     "none";
@@ -1532,6 +1563,10 @@ function switchToHistory() {
 if (window.preferenceHistory) {
   renderHistory(window.preferenceHistory, selectedLanguage);
 }
+  currentActiveView = "HISTORY";
+  const downloadBtn = document.getElementById("downloadHistoryBtn");
+  downloadBtn.classList.remove("hidden");
+  downloadBtn.innerHTML = '<i class="ri-download-2-line"></i> Download Preference History';
   attachHistoryScroll();
 
 }
@@ -1682,6 +1717,64 @@ if (children.length > 0) {
 
 document.getElementById("tab-current").addEventListener("click", switchToCurrent);
 document.getElementById("tab-history").addEventListener("click", switchToHistory);
+document.getElementById("downloadHistoryBtn").addEventListener("click", downloadPreferenceHistory);
+
+async function downloadPreferenceHistory() {
+  const downloadBtn = document.getElementById("downloadHistoryBtn");
+  if (downloadBtn) downloadBtn.classList.add("loading");
+
+  try {
+    const body = {
+      preferenceFormId,
+      page: 0,
+      pageSize: 1000,
+      sortBy: "formName",
+      sortDirection: "ASC",
+      type: currentActiveView 
+    };
+
+    if (currentActiveView === "CURRENT") body.language = selectedLanguage;
+
+    const browserSignature = await signPayload(body);
+    if (browserSignature) body.bss = browserSignature;
+
+    const res = await fetch(downloadHistoryPdfApiUrl, {
+      method: "POST",
+      headers: authHeaders(),
+      credentials: "include",
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      let msg = "Failed to download preference history.";
+      try {
+        const err = await res.json();
+        msg = err?.statusMessage || msg;
+      } catch (e) {}
+      showToast(msg, "error");
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const formName = String(window.preferenceData?.name || window.consentWidgetConfig.preferenceFormName || "preference").trim();
+    const filenamePrefix = currentActiveView === "CURRENT" ? "current-preference" : "preference-history";
+    const timestamp = new Date().toISOString().slice(0, 19).replace("T", "_").replace(/:/g, "-");
+    link.download = filenamePrefix + "_" + formName.replace(/[\\/:*?"<>|\x00-\x1f]/g, "_") + "_" + timestamp + ".pdf";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+  } catch (e) {
+    console.error("Download preference history failed:", e);
+    showToast("Failed to download. Please check your network connection.", "error");
+  } finally {
+    if (downloadBtn) downloadBtn.classList.remove("loading");
+  }
+}
 
 function decodeJwt(token) {
   const base64Url = token.split('.')[1];

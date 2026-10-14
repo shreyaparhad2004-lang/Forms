@@ -8,7 +8,7 @@
     />
     <title>Consent Widget</title>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="styles.css" />
 
   </head>
   <body>
@@ -24,12 +24,17 @@
         </div>
       </div>
       <div id="pc-tabs" class="pc-tabs d-none">
-        <div id="tab-current" class="pc-tab active">
-          Current Preference
+        <div class="pc-tab-group">
+          <div id="tab-current" class="pc-tab active">
+            Current Preference
+          </div>
+          <div id="tab-history" class="pc-tab">
+            Preference History
+          </div>
         </div>
-        <div id="tab-history" class="pc-tab">
-          Preference History
-        </div>
+      <div id="downloadHistoryBtn" class="download-history-link hidden">
+      <i class="ri-download-2-line"></i> Download Current Preference
+      </div>
       </div>
 
       <div class="header-container">
@@ -71,12 +76,18 @@
 <script>
   window.consentWidgetConfig = {
     preferenceFormId: "08f34363-b242-4b68-8d6f-1df81d6f6b81",
+    preferenceFormName: "DCF_dynamic_shreya",
+    apiDomain: "https://perf.pre-dataprivacy.com",
     preferenceDetailsApiUrl:"https://perf.pre-dataprivacy.com/cpm-api/open-api/v1/preference/v1/export/getPreferenceDetails",
     preferenceHistoryApiUrl:"https://perf.pre-dataprivacy.com/cpm-api/open-api/v1/preference/v1/export/auditSearch/scroll",
+    downloadHistoryPdfApiUrl:"https://perf.pre-dataprivacy.com/cpm-api/open-api/v1/preference/v1/export/downloadPreferenceHistoryPdf",
     submitApiUrl:"https://perf.pre-dataprivacy.com/cpm-api/open-api/v1/preference/v1/createOrUpdateConsent",
     signatureServiceUrl: "https://perf.pre-dataprivacy.com/cpm-sign",
     userToken: "Bearer bearer",
-    customAttributes: {},
+    customAttributes: {
+      "Test": "",
+      "vapt": ""
+    },
     showButtons: true,
     showLanguageDropdown: true,
     enableCheckboxes: true,
@@ -104,10 +115,9 @@
         // SRI (Subresource Integrity) ensures script hasn't been tampered with
         // crossOrigin required for SRI validation
         script.crossOrigin = 'anonymous';
-        script.integrity = "sha384-oNm+LwGMLcT2c/RuclPBfrv1eVn0bxzSjQZU1h4imnP911oSYLeC4D8VRHLfMk/M";
+        script.integrity = "sha384-Ukf6PTNQxRLiGaUlJk+VV7QHAGA3apiYqim8WN6whffHTNDya8cUk82p9ST9aehS";
         script.onload = function() {
           window.scriptLoaded = true;
-          console.log("script.js loaded");
         };
         document.body.appendChild(script);
       }
@@ -144,8 +154,6 @@
 
     const result = await window.consentWidget.submit();
 
-    console.log("Submit result:", result);
-
     if (result.success) {
       // navigate next page here
       // window.location.href = "/next-page";
@@ -161,7 +169,7 @@
 
 </script>
 <!--comment below line in case of Android integration -->
-<script src="./script.js" integrity="sha384-oNm+LwGMLcT2c/RuclPBfrv1eVn0bxzSjQZU1h4imnP911oSYLeC4D8VRHLfMk/M" crossorigin="anonymous"></script>
+<script src="script.js" integrity="sha384-Ukf6PTNQxRLiGaUlJk+VV7QHAGA3apiYqim8WN6whffHTNDya8cUk82p9ST9aehS" crossorigin="anonymous"></script>
   </body>
 </html>
    

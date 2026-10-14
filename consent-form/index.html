@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Consent Widget</title>
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="widget-container">
@@ -34,10 +34,11 @@
   <script>
     // Configuration options for the consent widget
     window.consentWidgetConfig = {
-      consentFormId: "153378f0-95ae-4aa8-ba6d-0c80830b4a88",
+      consentFormId: "b680785d-b037-48f7-bfb8-bb4c70ef1bb3",
+      apiDomain: "https://perf.pre-dataprivacy.com",
       apiUrl: "https://perf.pre-dataprivacy.com/cpm-api/open-api/v1/consent/v1/getConsentFormById",
       submitApiUrl: "https://perf.pre-dataprivacy.com/cpm-api/open-api/v1/consent/v1/createOrUpdateConsent",
-      tenantToken: "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjMDE0NTczNi01MmIyLTRkMjEtOTQ2My0zZDI2NTQyMDQzZjciLCJwcm9kdWN0IjoiQ29uc2VudCBNYW5hZ21lbnQiLCJzY29wZSI6ImFjY2VzcyIsImlhdCI6MTc4ODUwNjA3OSwiZXhwIjoxNzg4NTkyNDc5fQ.uSsKnBAnjw-r1FyjuJsna6SR3d4pQjJQ3UtaeDXS7wE",
+      tenantToken: "Bearer bearer",
       signatureServiceUrl: "https://perf.pre-dataprivacy.com/cpm-sign",
       dataPrincipalId: [
         {
@@ -45,7 +46,10 @@
           value: "email"
         }
       ],
-      customAttributes: {},
+      customAttributes: {
+        "Test": "",
+        "vapt": ""
+      },
       showButtons: true,
       showLanguageDropdown: true,
       enableCheckboxes: true,
@@ -76,10 +80,9 @@
         // SRI (Subresource Integrity) ensures script hasn't been tampered with
         // crossOrigin required for SRI validation
         script.crossOrigin = 'anonymous';
-        script.integrity = "sha384-y5s8nwocYzQzIVByBuPGvznrJgIo6P/dLT3oxvQjJQ6dHSuXm9bMHoEq8vpicoF5";
+        script.integrity = "sha384-+D19eOxe7ix4v061w3No5XYWlKH1wPy9/Bloc//dVxhdXSc+sQPeFGlMjdVQzQ9c";
         script.onload = function() {
           window.scriptLoaded = true;
-          console.log("script.js loaded");
         };
         document.body.appendChild(script);
       }
@@ -115,8 +118,6 @@
 
     const result = await window.consentWidget.submit();
 
-    console.log("Submit result:", result);
-
     if (result.success) {
       // navigate next page here
       // window.location.href = "/next-page";
@@ -131,6 +132,6 @@
 </script>
 -->
 <!--comment below line in case of Android integration -->
-<script src="./script.js" integrity="sha384-y5s8nwocYzQzIVByBuPGvznrJgIo6P/dLT3oxvQjJQ6dHSuXm9bMHoEq8vpicoF5" crossorigin="anonymous"></script>
+<script src="script.js" integrity="sha384-+D19eOxe7ix4v061w3No5XYWlKH1wPy9/Bloc//dVxhdXSc+sQPeFGlMjdVQzQ9c" crossorigin="anonymous"></script>
 </body>
 </html>

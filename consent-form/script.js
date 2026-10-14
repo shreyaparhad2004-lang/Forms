@@ -11,8 +11,32 @@ const {
   tenantToken,
   customAttributes,
   receivedType,
-  customHeaders
+  customHeaders,
+  apiDomain
 } = window.consentWidgetConfig;
+
+// Re-points a branding asset URL at the ConfigMap-provided apiDomain. Handles both
+// root-relative paths ("/cpm-api/upload/v1/fileDownloads?...") and absolute URLs that
+// still carry a stale host, so the logo loads from the correct backend when the
+// downloaded widget is hosted elsewhere.
+function resolveAssetUrl(url) {
+  if (!url) return url;
+  const raw = String(url).trim();
+  const marker = "/cpm-api/upload/v1/fileDownloads";
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const parsed = new URL(raw);
+      if (parsed.pathname.indexOf(marker) === 0 && apiDomain) {
+        return apiDomain + parsed.pathname + parsed.search;
+      }
+    } catch (e) {}
+    return raw;
+  }
+  if (raw.indexOf("/cpm-api/") === 0 && apiDomain) {
+    return apiDomain + raw;
+  }
+  return raw;
+}
 
 let createConsentRequestList = [];
 let dataPrincipalIdList = [];
@@ -524,7 +548,7 @@ function getFormValues(selectedLang) {
 }
 
 async function sendConsent() {
-  //setFormDisabled(true);
+  setFormDisabled(true);
   try {
     
     const body = {createConsentRequestDtoWrapper: createConsentRequestList,...campaignLinkContext};
@@ -561,14 +585,14 @@ async function sendConsent() {
         body: JSON.stringify(requestBody)
     });
 
-    const data = await res.json();
+    const data = res.status === 200 ? await res.json() : await res.json().catch(() => ({}));
     try {
       sessionStorage.setItem("consentResponse", JSON.stringify(data));
     } catch (e) {
       console.error("Storage failed:", e);
     }
 
-    if (data.response && data.statusCode === 200) {
+    if (res.status === 200 && data.response && data.statusCode === 200) {
     showToast("Consent saved successfully!", "success");
 
     await new Promise(resolve => setTimeout(resolve, 3000));
@@ -582,7 +606,15 @@ async function sendConsent() {
     await fetchConsentData(selectedLang);
 
     return data;
-}
+    } else if (res.status !== 200 || data.statusCode !== 200) {
+      showToast(data.statusMessage || "Something went wrong.", "error");
+      const langSelect = document.getElementById("langSelect");
+      await fetchConsentData(langSelect?.value || document.documentElement.lang || "en");
+      const submitBtn = document.getElementById("submitBtn");
+      if (submitBtn) submitBtn.disabled = false;
+  }else {
+    showToast(data.statusMessage || "Something went wrong.", "error");
+  }
 
 
   } catch (err) {
@@ -647,9 +679,15 @@ function setFormDisabled(disabled = true) {
   const cancelBtn = document.getElementById("cancelBtn");
   
   if (disabled) {
+    submitBtn.disabled = disabled;
     submitBtn.classList.add("loading");
   } else {
     submitBtn.classList.remove("loading");
+  }
+  
+  if (cancelBtn) {
+    cancelBtn.disabled = disabled;
+    cancelBtn.classList.toggle("loading", disabled);
   }
 }
 
@@ -700,7 +738,7 @@ function renderConsent(data, selectedLang) {
 
   if (branding.logo) {
     const img = document.createElement("img");
-    img.src = branding.logo;
+    img.src = resolveAssetUrl(branding.logo);
     img.alt = branding.companyName || "Logo";
     img.className = "branding-logo";
     img.onerror = () => img.classList.add("hidden");
@@ -1245,8 +1283,8 @@ clickEvent = async (e) => {
 
 submitBtn.addEventListener("click", clickEvent);
 
-cancelBtn.onclick = () => {
-  resetWidget(false);
+cancelBtn.onclick = async () => {
+  await resetWidget(true);
 };
 
 }

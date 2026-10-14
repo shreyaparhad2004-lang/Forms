@@ -116,6 +116,28 @@ body {
   text-align: right;
 }
 
+.download-history-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4f46e5;
+  cursor: pointer;
+  margin-top: 15px;
+  white-space: nowrap;
+}
+
+.download-history-link:hover {
+  opacity: 0.85;
+}
+
+.download-history-link.loading {
+  cursor: not-allowed;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 @media (max-width: 600px) {
   .header-container {
     justify-content: center;
@@ -301,8 +323,14 @@ button {
   border: 2px solid;
 }
 
-button:hover {
+button:not(:disabled):hover {
   opacity: 0.9;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .error-message {
@@ -387,7 +415,16 @@ button:hover {
 
 .pc-tabs {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
 }
+
+.pc-tab-group {
+  display: flex;
+  align-items: center;
+}
+
 .full-width-footer-border.hidden {
   display: none !important;
 }
